@@ -14,20 +14,18 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Card,
-  CardContent,
-  Grid,
   CircularProgress,
   Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TablePagination,
+  useTheme,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
-  FilterList as FilterIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { EmailSummary } from '../types';
@@ -57,6 +55,8 @@ const CATEGORIES = [
   'Other',
 ];
 
+const ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
+
 export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   summaries,
   onFilter,
@@ -64,10 +64,14 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   onDelete,
   loading,
 }) => {
+  const theme = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [viewMode] = useState<'table' | 'cards'>('table');
   const [processingStates, setProcessingStates] = useState<ProcessingState>({});
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null; summary: EmailSummary | null }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    id: string | null;
+    summary: EmailSummary | null;
+  }>({
     open: false,
     id: null,
     summary: null,
@@ -76,6 +80,8 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
     open: false,
     summary: null,
   });
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const filteredSummaries = useMemo(() => {
     if (selectedCategory === 'All') {
@@ -83,6 +89,12 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
     }
     return summaries.filter((summary) => summary.category === selectedCategory);
   }, [summaries, selectedCategory]);
+
+  const paginatedSummaries = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredSummaries.slice(startIndex, endIndex);
+  }, [filteredSummaries, page, rowsPerPage]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -94,7 +106,17 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    setPage(0); // Reset to first page when filter changes
     onFilter(category === 'All' ? undefined : category);
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const handleReSummarizeClick = async (id: string) => {
@@ -136,8 +158,13 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
     setDetailView({ open: true, summary });
   };
 
-  const getCategoryColor = (category: string): 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' => {
-    const colorMap: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
+  const getCategoryColor = (
+    category: string
+  ): 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' => {
+    const colorMap: Record<
+      string,
+      'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
+    > = {
       Meeting: 'primary',
       Invoice: 'warning',
       'Support Request': 'error',
@@ -152,7 +179,15 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          mb: 1.5,
+          display: 'flex',
+          gap: 2,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
         <TextField
           select
           label="Filter by Category"
@@ -169,176 +204,239 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
         </TextField>
 
         <Chip
-          icon={<FilterIcon />}
           label={`Total: ${summaries.length} | Filtered: ${filteredSummaries.length}`}
           variant="outlined"
+          sx={{
+            fontWeight: 500,
+            borderColor: theme.palette.primary.main,
+            color: theme.palette.text.primary,
+          }}
         />
       </Box>
 
       {filteredSummaries.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="text.secondary">
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            backgroundColor: theme.palette.background.paper,
+          }}
+        >
+          <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
             No email summaries found
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Click "Load Mock Emails" to get started
           </Typography>
         </Paper>
-      ) : viewMode === 'table' ? (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Sender</TableCell>
-                <TableCell>Subject</TableCell>
-                <TableCell>Summary</TableCell>
-                <TableCell>Category</TableCell>
-                <TableCell>Keywords</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredSummaries.map((summary) => (
-                <TableRow key={summary.id} hover>
-                  <TableCell>{summary.sender}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
-                      {summary.subject}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ maxWidth: 400 }}>
-                      {summary.summary}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={summary.category}
-                      color={getCategoryColor(summary.category)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <KeywordsDisplay keywords={summary.keywords} maxVisible={3} />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                      <Tooltip title="View Details">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewDetails(summary)}
-                          color="info"
-                          sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={processingStates[summary.id] === 'processing' ? 'Re-summarizing...' : 'Re-summarize'}>
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleReSummarizeClick(summary.id)}
-                            disabled={loading || processingStates[summary.id] === 'processing'}
-                            color={processingStates[summary.id] === 'success' ? 'success' : 'primary'}
+      ) : (
+        <>
+          <Box
+            sx={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            <TableContainer
+              component={Paper}
+              sx={{
+                boxShadow: theme.shadows[2],
+                borderRadius: 1,
+                flex: 1,
+                overflow: 'auto',
+              }}
+            >
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: '#f5f5f5',
+                      '& .MuiTableCell-head': {
+                        color: '#000000',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        padding: '16px',
+                        borderBottom: '2px solid #e0e0e0',
+                      },
+                    }}
+                  >
+                    <TableCell>Sender</TableCell>
+                    <TableCell>Subject</TableCell>
+                    <TableCell>Summary</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Keywords</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedSummaries.map((summary) => (
+                    <TableRow
+                      key={summary.id}
+                      hover
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {summary.sender}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {summary.subject}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={summary.summary} arrow placement="top">
+                          <Typography
+                            variant="body2"
                             sx={{
-                              '&:hover': { backgroundColor: 'action.hover' },
-                              '&.Mui-disabled': { opacity: 0.5 },
+                              maxWidth: 400,
+                              color: theme.palette.text.secondary,
+                              lineHeight: 1.6,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              cursor: 'pointer',
                             }}
                           >
-                            {processingStates[summary.id] === 'processing' ? (
-                              <CircularProgress size={16} />
-                            ) : (
-                              <RefreshIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
+                            {summary.summary}
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={summary.category}
+                          color={getCategoryColor(summary.category)}
                           size="small"
-                          onClick={() => handleDeleteClick(summary)}
-                          disabled={loading || processingStates[summary.id] === 'processing'}
-                          color="error"
                           sx={{
-                            '&:hover': { backgroundColor: 'error.light', color: 'error.contrastText' },
-                            '&.Mui-disabled': { opacity: 0.5 },
+                            fontWeight: 500,
+                            borderRadius: 1,
+                            height: '28px',
                           }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredSummaries.map((summary) => (
-            <Grid item xs={12} md={6} lg={4} key={summary.id}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Chip
-                      label={summary.category}
-                      color={getCategoryColor(summary.category)}
-                      size="small"
-                    />
-                    <Box>
-                      <Tooltip title="View Details">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewDetails(summary)}
-                          color="info"
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={processingStates[summary.id] === 'processing' ? 'Re-summarizing...' : 'Re-summarize'}>
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleReSummarizeClick(summary.id)}
-                            disabled={loading || processingStates[summary.id] === 'processing'}
-                            color={processingStates[summary.id] === 'success' ? 'success' : 'primary'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <KeywordsDisplay keywords={summary.keywords} maxVisible={3} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewDetails(summary)}
+                              color="info"
+                              sx={{
+                                borderRadius: 1,
+                                height: '36px',
+                                width: '36px',
+                                '&:hover': {
+                                  backgroundColor: theme.palette.info.light,
+                                  color: theme.palette.info.contrastText,
+                                },
+                              }}
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip
+                            title={
+                              processingStates[summary.id] === 'processing'
+                                ? 'Re-summarizing...'
+                                : 'Re-summarize'
+                            }
                           >
-                            {processingStates[summary.id] === 'processing' ? (
-                              <CircularProgress size={16} />
-                            ) : (
-                              <RefreshIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteClick(summary)}
-                          disabled={loading || processingStates[summary.id] === 'processing'}
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    {summary.sender}
-                  </Typography>
-                  <Typography variant="h6" component="h3" gutterBottom>
-                    {summary.subject}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {summary.summary}
-                  </Typography>
-                  <KeywordsDisplay keywords={summary.keywords} maxVisible={5} />
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={() => handleReSummarizeClick(summary.id)}
+                                disabled={loading || processingStates[summary.id] === 'processing'}
+                                color={
+                                  processingStates[summary.id] === 'success'
+                                    ? 'success'
+                                    : 'primary'
+                                }
+                                sx={{
+                                  borderRadius: 1,
+                                  height: '36px',
+                                  width: '36px',
+                                  '&:hover': {
+                                    backgroundColor: theme.palette.primary.light,
+                                    color: theme.palette.primary.contrastText,
+                                  },
+                                  '&.Mui-disabled': { opacity: 0.5 },
+                                }}
+                              >
+                                {processingStates[summary.id] === 'processing' ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <RefreshIcon fontSize="small" />
+                                )}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteClick(summary)}
+                              disabled={loading || processingStates[summary.id] === 'processing'}
+                              color="error"
+                              sx={{
+                                borderRadius: 1,
+                                height: '36px',
+                                width: '36px',
+                                '&:hover': {
+                                  backgroundColor: theme.palette.error.light,
+                                  color: theme.palette.error.contrastText,
+                                },
+                                '&.Mui-disabled': { opacity: 0.5 },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Paper
+              sx={{
+                position: 'sticky',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 10,
+                borderTop: `1px solid ${theme.palette.divider}`,
+                boxShadow: theme.shadows[4],
+                borderRadius: '0 0 4px 4px',
+              }}
+            >
+              <TablePagination
+                component="div"
+                count={filteredSummaries.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                sx={{
+                  backgroundColor: theme.palette.background.paper,
+                }}
+              />
+            </Paper>
+          </Box>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}
@@ -346,12 +444,10 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, id: null, summary: null })}
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete the summary for:
-          </Typography>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 1 }}>
+          <Typography>Are you sure you want to delete the summary for:</Typography>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 1 }}>
             {deleteConfirm.summary?.subject}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -375,59 +471,64 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2, fontWeight: 600 }}>
           Email Details
           {detailView.summary && (
             <Chip
               label={detailView.summary.category}
               color={getCategoryColor(detailView.summary.category)}
               size="small"
-              sx={{ ml: 2 }}
             />
           )}
         </DialogTitle>
         <DialogContent>
           {detailView.summary && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
                 From
               </Typography>
-              <Typography variant="body1" sx={{ mb: 2 }}>
+              <Typography variant="body1" sx={{ mb: 2, fontFamily: 'monospace' }}>
                 {detailView.summary.sender}
               </Typography>
 
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
                 Subject
               </Typography>
-              <Typography variant="h6" sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                 {detailView.summary.subject}
               </Typography>
 
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
                 Summary
               </Typography>
-              <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+              <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
                 {detailView.summary.summary}
               </Typography>
 
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
                 Keywords
               </Typography>
               <KeywordsDisplay keywords={detailView.summary.keywords} maxVisible={10} />
 
               {detailView.summary.invoiceData && (
                 <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom fontWeight={600}>
                     Invoice Details
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 2, mt: 1 }}>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>Item</TableCell>
-                          <TableCell align="right">Quantity</TableCell>
-                          <TableCell align="right">Price</TableCell>
-                          <TableCell align="right">Total</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Item</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            Quantity
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            Price
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            Total
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -438,26 +539,26 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                             <TableCell align="right">
                               {new Intl.NumberFormat('en-US', {
                                 style: 'currency',
-                                currency: detailView.summary.invoiceData?.currency || 'USD',
+                                currency: detailView.summary?.invoiceData?.currency || 'USD',
                               }).format(item.price)}
                             </TableCell>
                             <TableCell align="right">
                               {new Intl.NumberFormat('en-US', {
                                 style: 'currency',
-                                currency: detailView.summary.invoiceData?.currency || 'USD',
+                                currency: detailView.summary?.invoiceData?.currency || 'USD',
                               }).format(item.total || item.price)}
                             </TableCell>
                           </TableRow>
                         ))}
                         <TableRow>
-                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold' }}>
+                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 600 }}>
                             Total:
                           </TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>
                             {new Intl.NumberFormat('en-US', {
                               style: 'currency',
-                              currency: detailView.summary.invoiceData?.currency || 'USD',
-                            }).format(detailView.summary.invoiceData.total)}
+                              currency: detailView.summary?.invoiceData?.currency || 'USD',
+                            }).format(detailView.summary?.invoiceData?.total || 0)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -478,9 +579,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailView({ open: false, summary: null })}>
-            Close
-          </Button>
+          <Button onClick={() => setDetailView({ open: false, summary: null })}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

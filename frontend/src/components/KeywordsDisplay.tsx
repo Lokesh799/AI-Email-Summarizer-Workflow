@@ -49,7 +49,8 @@ export const KeywordsDisplay: React.FC<KeywordsDisplayProps> = ({ keywords, maxV
           variant="outlined"
           sx={{
             fontSize: '0.75rem',
-            height: '24px',
+            height: '28px',
+            borderRadius: 1,
             '&:hover': {
               backgroundColor: 'action.hover',
             },
@@ -66,7 +67,8 @@ export const KeywordsDisplay: React.FC<KeywordsDisplayProps> = ({ keywords, maxV
               onClick={handleExpandClick}
               sx={{
                 fontSize: '0.75rem',
-                height: '24px',
+                height: '28px',
+                borderRadius: 1,
                 cursor: 'pointer',
                 backgroundColor: expanded ? 'primary.main' : 'primary.light',
                 color: expanded ? 'primary.contrastText' : 'primary.contrastText',
@@ -107,7 +109,11 @@ export const KeywordsDisplay: React.FC<KeywordsDisplayProps> = ({ keywords, maxV
                     label={keyword}
                     size="small"
                     variant="outlined"
-                    sx={{ fontSize: '0.75rem' }}
+                    sx={{
+                      fontSize: '0.75rem',
+                      borderRadius: 1,
+                      height: '28px',
+                    }}
                   />
                 ))}
               </Box>

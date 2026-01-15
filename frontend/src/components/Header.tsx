@@ -9,7 +9,14 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onLoadMockEmails, onExport, loading }) => {
   return (
-    <AppBar position="static">
+    <AppBar
+      position="sticky"
+      sx={{
+        backgroundColor: '#2c3e50',
+        boxShadow: 2,
+        zIndex: 1100,
+      }}
+    >
       <Toolbar>
         <Email sx={{ mr: 2 }} />
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -21,6 +28,12 @@ export const Header: React.FC<HeaderProps> = ({ onLoadMockEmails, onExport, load
             startIcon={<Email />}
             onClick={onLoadMockEmails}
             disabled={loading}
+            sx={{
+              borderRadius: 1,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
           >
             Load Mock Emails
           </Button>
@@ -29,6 +42,12 @@ export const Header: React.FC<HeaderProps> = ({ onLoadMockEmails, onExport, load
             startIcon={<Download />}
             onClick={() => onExport()}
             disabled={loading}
+            sx={{
+              borderRadius: 1,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
           >
             Export CSV
           </Button>
