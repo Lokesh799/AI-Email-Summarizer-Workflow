@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { emailService } from '../services/email.service.js';
+import { pdfService } from '../services/pdf.service.js';
 import { z } from 'zod';
 
 const EmailSchema = z.object({
@@ -150,7 +151,7 @@ export async function emailRoutes(fastify: FastifyInstance) {
       const summaries = await emailService.getAllSummaries(category);
       console.log('✅ [API] Exporting', summaries.length, 'summaries as CSV');
 
-      const headers = ['ID', 'Sender', 'Subject', 'Summary', 'Category', 'Keywords', 'Created At', 'Updated At'];
+      const headers = ['ID', 'Sender', 'Subject', 'Summary', 'Category', 'Keywords', 'Invoice Total', 'Created At', 'Updated At'];
       const rows = summaries.map((summary) => [
         summary.id,
         summary.sender,
@@ -158,6 +159,9 @@ export async function emailRoutes(fastify: FastifyInstance) {
         summary.summary.replace(/\n/g, ' ').replace(/\r/g, ''),
         summary.category,
         summary.keywords?.join('; ') || '',
+        summary.invoiceData && typeof summary.invoiceData === 'object' && 'currency' in summary.invoiceData && 'total' in summary.invoiceData
+          ? `${(summary.invoiceData as any).currency} ${(summary.invoiceData as any).total.toFixed(2)}`
+          : '',
         summary.createdAt instanceof Date ? summary.createdAt.toISOString() : summary.createdAt,
         summary.updatedAt instanceof Date ? summary.updatedAt.toISOString() : summary.updatedAt,
       ]);
@@ -181,6 +185,31 @@ export async function emailRoutes(fastify: FastifyInstance) {
       return reply.send(csv);
     } catch (error) {
       console.error('❌ [API] Error exporting CSV:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return reply.status(500).send({ error: errorMessage });
+    }
+  });
+
+  // Extract invoice from email body (for testing/simulation)
+  fastify.post<{ Body: { emailBody?: string } }>('/summaries/extract-invoice', async (request, reply) => {
+    try {
+      console.log('📥 [API] POST /api/summaries/extract-invoice - Invoice extraction request');
+      const { emailBody } = request.body;
+      
+      if (!emailBody) {
+        return reply.status(400).send({ error: 'Email body is required' });
+      }
+
+      const invoiceData = await pdfService.extractInvoiceData(emailBody);
+      
+      if (!invoiceData) {
+        return reply.status(404).send({ error: 'No invoice data found in email body' });
+      }
+
+      console.log('✅ [API] Invoice data extracted successfully');
+      return reply.send({ data: invoiceData });
+    } catch (error) {
+      console.error('❌ [API] Error extracting invoice:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return reply.status(500).send({ error: errorMessage });
     }

@@ -17,13 +17,21 @@ import {
   Card,
   CardContent,
   Grid,
+  CircularProgress,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
   FilterList as FilterIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { EmailSummary } from '../types';
+import { KeywordsDisplay } from './KeywordsDisplay';
 
 interface EmailDashboardProps {
   summaries: EmailSummary[];
@@ -31,6 +39,10 @@ interface EmailDashboardProps {
   onReSummarize: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
+}
+
+interface ProcessingState {
+  [id: string]: 'idle' | 'processing' | 'success' | 'error';
 }
 
 const CATEGORIES = [
@@ -54,6 +66,16 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [viewMode] = useState<'table' | 'cards'>('table');
+  const [processingStates, setProcessingStates] = useState<ProcessingState>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null; summary: EmailSummary | null }>({
+    open: false,
+    id: null,
+    summary: null,
+  });
+  const [detailView, setDetailView] = useState<{ open: boolean; summary: EmailSummary | null }>({
+    open: false,
+    summary: null,
+  });
 
   const filteredSummaries = useMemo(() => {
     if (selectedCategory === 'All') {
@@ -73,6 +95,45 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     onFilter(category === 'All' ? undefined : category);
+  };
+
+  const handleReSummarizeClick = async (id: string) => {
+    setProcessingStates((prev) => ({ ...prev, [id]: 'processing' }));
+    try {
+      await onReSummarize(id);
+      setProcessingStates((prev) => ({ ...prev, [id]: 'success' }));
+      setTimeout(() => {
+        setProcessingStates((prev) => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }, 2000);
+    } catch (error) {
+      setProcessingStates((prev) => ({ ...prev, [id]: 'error' }));
+      setTimeout(() => {
+        setProcessingStates((prev) => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }, 3000);
+    }
+  };
+
+  const handleDeleteClick = (summary: EmailSummary) => {
+    setDeleteConfirm({ open: true, id: summary.id, summary });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirm.id) {
+      await onDelete(deleteConfirm.id);
+      setDeleteConfirm({ open: false, id: null, summary: null });
+    }
+  };
+
+  const handleViewDetails = (summary: EmailSummary) => {
+    setDetailView({ open: true, summary });
   };
 
   const getCategoryColor = (category: string): 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' => {
@@ -158,40 +219,55 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                     />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
-                      {summary.keywords?.slice(0, 3).map((keyword, idx) => (
-                        <Chip key={idx} label={keyword} size="small" variant="outlined" />
-                      ))}
-                      {summary.keywords && summary.keywords.length > 3 && (
-                        <Chip
-                          label={`+${summary.keywords.length - 3}`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
+                    <KeywordsDisplay keywords={summary.keywords} maxVisible={3} />
                   </TableCell>
                   <TableCell align="right">
-                    <Tooltip title="Re-summarize">
-                      <IconButton
-                        size="small"
-                        onClick={() => onReSummarize(summary.id)}
-                        disabled={loading}
-                        color="primary"
-                      >
-                        <RefreshIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => onDelete(summary.id)}
-                        disabled={loading}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                      <Tooltip title="View Details">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleViewDetails(summary)}
+                          color="info"
+                          sx={{ '&:hover': { backgroundColor: 'action.hover' } }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={processingStates[summary.id] === 'processing' ? 'Re-summarizing...' : 'Re-summarize'}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleReSummarizeClick(summary.id)}
+                            disabled={loading || processingStates[summary.id] === 'processing'}
+                            color={processingStates[summary.id] === 'success' ? 'success' : 'primary'}
+                            sx={{
+                              '&:hover': { backgroundColor: 'action.hover' },
+                              '&.Mui-disabled': { opacity: 0.5 },
+                            }}
+                          >
+                            {processingStates[summary.id] === 'processing' ? (
+                              <CircularProgress size={16} />
+                            ) : (
+                              <RefreshIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteClick(summary)}
+                          disabled={loading || processingStates[summary.id] === 'processing'}
+                          color="error"
+                          sx={{
+                            '&:hover': { backgroundColor: 'error.light', color: 'error.contrastText' },
+                            '&.Mui-disabled': { opacity: 0.5 },
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -211,21 +287,36 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                       size="small"
                     />
                     <Box>
-                      <Tooltip title="Re-summarize">
+                      <Tooltip title="View Details">
                         <IconButton
                           size="small"
-                          onClick={() => onReSummarize(summary.id)}
-                          disabled={loading}
-                          color="primary"
+                          onClick={() => handleViewDetails(summary)}
+                          color="info"
                         >
-                          <RefreshIcon fontSize="small" />
+                          <VisibilityIcon fontSize="small" />
                         </IconButton>
+                      </Tooltip>
+                      <Tooltip title={processingStates[summary.id] === 'processing' ? 'Re-summarizing...' : 'Re-summarize'}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleReSummarizeClick(summary.id)}
+                            disabled={loading || processingStates[summary.id] === 'processing'}
+                            color={processingStates[summary.id] === 'success' ? 'success' : 'primary'}
+                          >
+                            {processingStates[summary.id] === 'processing' ? (
+                              <CircularProgress size={16} />
+                            ) : (
+                              <RefreshIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"
-                          onClick={() => onDelete(summary.id)}
-                          disabled={loading}
+                          onClick={() => handleDeleteClick(summary)}
+                          disabled={loading || processingStates[summary.id] === 'processing'}
                           color="error"
                         >
                           <DeleteIcon fontSize="small" />
@@ -242,17 +333,156 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {summary.summary}
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {summary.keywords?.map((keyword, idx) => (
-                      <Chip key={idx} label={keyword} size="small" variant="outlined" />
-                    ))}
-                  </Box>
+                  <KeywordsDisplay keywords={summary.keywords} maxVisible={5} />
                 </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, id: null, summary: null })}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete the summary for:
+          </Typography>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 1 }}>
+            {deleteConfirm.summary?.subject}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            From: {deleteConfirm.summary?.sender}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirm({ open: false, id: null, summary: null })}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Detail View Dialog */}
+      <Dialog
+        open={detailView.open}
+        onClose={() => setDetailView({ open: false, summary: null })}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Email Details
+          {detailView.summary && (
+            <Chip
+              label={detailView.summary.category}
+              color={getCategoryColor(detailView.summary.category)}
+              size="small"
+              sx={{ ml: 2 }}
+            />
+          )}
+        </DialogTitle>
+        <DialogContent>
+          {detailView.summary && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                From
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {detailView.summary.sender}
+              </Typography>
+
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Subject
+              </Typography>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                {detailView.summary.subject}
+              </Typography>
+
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Summary
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>
+                {detailView.summary.summary}
+              </Typography>
+
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Keywords
+              </Typography>
+              <KeywordsDisplay keywords={detailView.summary.keywords} maxVisible={10} />
+
+              {detailView.summary.invoiceData && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Invoice Details
+                  </Typography>
+                  <Paper variant="outlined" sx={{ p: 2, mt: 1 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Item</TableCell>
+                          <TableCell align="right">Quantity</TableCell>
+                          <TableCell align="right">Price</TableCell>
+                          <TableCell align="right">Total</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {detailView.summary.invoiceData.items.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>{item.item}</TableCell>
+                            <TableCell align="right">{item.quantity || 1}</TableCell>
+                            <TableCell align="right">
+                              {new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: detailView.summary.invoiceData?.currency || 'USD',
+                              }).format(item.price)}
+                            </TableCell>
+                            <TableCell align="right">
+                              {new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: detailView.summary.invoiceData?.currency || 'USD',
+                              }).format(item.total || item.price)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow>
+                          <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold' }}>
+                            Total:
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                            {new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: detailView.summary.invoiceData?.currency || 'USD',
+                            }).format(detailView.summary.invoiceData.total)}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </Paper>
+                </Box>
+              )}
+
+              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Typography variant="caption" color="text.secondary">
+                  Created: {new Date(detailView.summary.createdAt).toLocaleString()}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Updated: {new Date(detailView.summary.updatedAt).toLocaleString()}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailView({ open: false, summary: null })}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

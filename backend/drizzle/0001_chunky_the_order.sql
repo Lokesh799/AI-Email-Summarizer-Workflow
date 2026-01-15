@@ -1,0 +1,1 @@
+ALTER TABLE "email_summaries" ADD COLUMN "invoice_data" jsonb;

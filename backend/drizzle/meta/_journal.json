@@ -8,6 +8,13 @@
       "when": 1768471481134,
       "tag": "0000_fixed_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1768475223901,
+      "tag": "0001_chunky_the_order",
+      "breakpoints": true
     }
   ]
 }

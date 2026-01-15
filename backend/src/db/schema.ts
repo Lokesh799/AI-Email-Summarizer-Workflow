@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar, jsonb } from 'drizzle-orm/pg-core';
 
 export const emailSummaries = pgTable('email_summaries', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -8,6 +8,7 @@ export const emailSummaries = pgTable('email_summaries', {
   summary: text('summary').notNull(),
   category: varchar('category', { length: 100 }).notNull(),
   keywords: text('keywords').array(),
+  invoiceData: jsonb('invoice_data'), // Store extracted invoice data
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

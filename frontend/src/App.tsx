@@ -10,6 +10,7 @@ function App() {
   const [summaries, setSummaries] = useState<EmailSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentCategory, setCurrentCategory] = useState<string | undefined>(undefined);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -20,8 +21,15 @@ function App() {
     try {
       setLoading(true);
       setError(null);
+      setCurrentCategory(category); // Store current category filter
       const data = await emailService.getSummaries(category);
-      setSummaries(data);
+      
+      // Remove duplicates by ID (in case backend returns duplicates)
+      const uniqueSummaries = Array.from(
+        new Map(data.map(item => [item.id, item])).values()
+      );
+      
+      setSummaries(uniqueSummaries);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load summaries';
       setError(errorMessage);
@@ -51,12 +59,15 @@ function App() {
 
   const handleReSummarize = async (id: string) => {
     try {
-      await emailService.reSummarize(id);
-      showSnackbar('Email re-summarized successfully!', 'success');
-      await loadSummaries();
+      showSnackbar('Re-summarizing email with AI...', 'success');
+      const updated = await emailService.reSummarize(id);
+      showSnackbar(`Email re-summarized successfully! New category: ${updated.category}`, 'success');
+      // Reload with current category filter to maintain filter state
+      await loadSummaries(currentCategory);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to re-summarize email';
       showSnackbar(errorMessage, 'error');
+      throw err; // Re-throw so component can handle state
     }
   };
 
@@ -64,7 +75,8 @@ function App() {
     try {
       await emailService.deleteSummary(id);
       showSnackbar('Email deleted successfully!', 'success');
-      await loadSummaries();
+      // Reload with current category filter to maintain filter state
+      await loadSummaries(currentCategory);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete email';
       showSnackbar(errorMessage, 'error');

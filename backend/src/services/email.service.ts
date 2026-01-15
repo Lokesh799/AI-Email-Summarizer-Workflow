@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { emailSummaries, type EmailSummary, type NewEmailSummary } from '../db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import { openAIService } from './openai.service.js';
+import { pdfService } from './pdf.service.js';
 
 interface EmailData {
   sender: string;
@@ -16,6 +17,19 @@ export class EmailService {
     const summaryData = await openAIService.summarizeEmail(email);
     console.log('✅ [EmailService] Received summary data from OpenAI');
 
+    // Extract invoice data if category is Invoice
+    let invoiceData = null;
+    if (summaryData.category === 'Invoice') {
+      console.log('📄 [EmailService] Invoice detected, extracting invoice data...');
+      invoiceData = await pdfService.extractInvoiceData(email.body);
+      if (invoiceData) {
+        console.log('✅ [EmailService] Invoice data extracted:', {
+          itemsCount: invoiceData.items.length,
+          total: invoiceData.total,
+        });
+      }
+    }
+
     const newSummary: NewEmailSummary = {
       sender: email.sender,
       subject: email.subject,
@@ -23,6 +37,7 @@ export class EmailService {
       summary: summaryData.summary,
       category: summaryData.category,
       keywords: summaryData.keywords,
+      invoiceData: invoiceData as any,
     };
 
     console.log('💾 [EmailService] Inserting into database...');
@@ -53,6 +68,19 @@ export class EmailService {
           sender: email.sender,
           category: summaryData.category,
         });
+
+        // Extract invoice data if category is Invoice
+        let invoiceData = null;
+        if (summaryData.category === 'Invoice') {
+          console.log(`📄 [EmailService] Invoice detected for email ${i + 1}, extracting invoice data...`);
+          invoiceData = await pdfService.extractInvoiceData(email.body);
+          if (invoiceData) {
+            console.log(`✅ [EmailService] Invoice data extracted for email ${i + 1}:`, {
+              itemsCount: invoiceData.items.length,
+              total: invoiceData.total,
+            });
+          }
+        }
         
         summariesToInsert.push({
           sender: email.sender,
@@ -61,6 +89,7 @@ export class EmailService {
           summary: summaryData.summary,
           category: summaryData.category,
           keywords: summaryData.keywords,
+          invoiceData: invoiceData as any,
         });
       } else {
         console.warn(`⚠️ [EmailService] No summary data for email ${i + 1}: ${email.sender}`);
@@ -140,12 +169,23 @@ export class EmailService {
       summaryLength: summaryData.summary.length,
     });
 
+    // Re-extract invoice data if category changed to Invoice
+    let invoiceData = existing.invoiceData;
+    if (summaryData.category === 'Invoice' && !invoiceData) {
+      console.log('📄 [EmailService] Category changed to Invoice, extracting invoice data...');
+      invoiceData = await pdfService.extractInvoiceData(existing.body);
+    } else if (summaryData.category !== 'Invoice') {
+      invoiceData = null; // Clear invoice data if category changed away from Invoice
+    }
+
+    console.log('💾 [EmailService] Updating database...');
     const [updated] = await db
       .update(emailSummaries)
       .set({
         summary: summaryData.summary,
         category: summaryData.category,
         keywords: summaryData.keywords,
+        invoiceData: invoiceData as any,
         updatedAt: new Date(),
       })
       .where(eq(emailSummaries.id, id))
