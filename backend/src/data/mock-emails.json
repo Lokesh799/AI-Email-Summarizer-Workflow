@@ -1,0 +1,52 @@
+[
+  {
+    "sender": "john.doe@company.com",
+    "subject": "Team Meeting Tomorrow at 2 PM",
+    "body": "Hi team, I wanted to remind everyone about our quarterly review meeting scheduled for tomorrow at 2 PM in the main conference room. Please come prepared with your Q4 reports and any questions you might have. We'll be discussing the upcoming product launch and budget allocations for next quarter."
+  },
+  {
+    "sender": "billing@invoiceservice.com",
+    "subject": "Invoice #INV-2024-001 - Payment Due",
+    "body": "Dear Customer, This is a reminder that your invoice #INV-2024-001 for the amount of $2,450.00 is due on January 15, 2024. The invoice includes services rendered for the month of December 2023. Please make payment via bank transfer or credit card. If you have any questions, please contact our billing department."
+  },
+  {
+    "sender": "support@techhelp.com",
+    "subject": "Re: Issue with Login System",
+    "body": "Thank you for contacting our support team. We have investigated the login issue you reported and have identified the problem. A fix has been deployed and should resolve the authentication errors you were experiencing. Please try logging in again and let us know if you encounter any further issues. We apologize for the inconvenience."
+  },
+  {
+    "sender": "newsletter@technews.com",
+    "subject": "Weekly Tech Roundup - AI Developments",
+    "body": "This week in tech: Major AI companies announced new language models, cloud providers reduced pricing, and cybersecurity experts warned about new threats. Read about the latest developments in artificial intelligence, including breakthroughs in natural language processing and computer vision. Don't miss our exclusive interview with industry leaders."
+  },
+  {
+    "sender": "promotions@ecommerce.com",
+    "subject": "50% Off All Electronics - Limited Time!",
+    "body": "Hurry! Our biggest sale of the year is here. Get 50% off all electronics including laptops, smartphones, and accessories. Use code SAVE50 at checkout. This offer is valid until January 31st. Free shipping on orders over $100. Don't miss out on these incredible deals!"
+  },
+  {
+    "sender": "sarah.johnson@company.com",
+    "subject": "Project Update - Q1 Milestones",
+    "body": "Hi everyone, I wanted to provide an update on our Q1 project milestones. We've successfully completed Phase 1 ahead of schedule and are now moving into Phase 2. The development team has made excellent progress on the new features. We'll need to schedule a review meeting next week to discuss the timeline for Phase 3."
+  },
+  {
+    "sender": "billing@utilities.com",
+    "subject": "Monthly Invoice - December 2023",
+    "body": "Your monthly invoice for December 2023 is now available. Total amount due: $125.50. This includes electricity, water, and internet services. Payment is due by January 20, 2024. You can pay online through our portal or set up automatic payments. Thank you for being a valued customer."
+  },
+  {
+    "sender": "support@software.com",
+    "subject": "Your Support Ticket #12345 Has Been Resolved",
+    "body": "We're pleased to inform you that your support ticket #12345 regarding the export functionality has been resolved. The issue was related to date formatting in the CSV export. The fix has been applied to version 2.3.1. Please update your software to the latest version to receive the fix. If you have any other questions, feel free to reach out."
+  },
+  {
+    "sender": "marketing@startup.com",
+    "subject": "Welcome to Our Platform!",
+    "body": "Welcome to our platform! We're excited to have you on board. As a new member, you'll have access to all premium features for the first 30 days. Check out our getting started guide and don't hesitate to reach out if you need any assistance. We're here to help you succeed!"
+  },
+  {
+    "sender": "alex.martin@company.com",
+    "subject": "Budget Approval Request",
+    "body": "I'm writing to request approval for the Q2 marketing budget. The proposed budget is $50,000 and includes digital advertising, content creation, and event sponsorships. This represents a 15% increase from last quarter, which is justified by the projected revenue growth. Please review the attached proposal and let me know if you have any questions."
+  }
+]
