@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { EmailSummary, EmailData } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// In Replit, use relative URL since frontend is served from same origin
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
