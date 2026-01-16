@@ -41,7 +41,8 @@ export async function pdfRoutes(fastify: FastifyInstance) {
         rawText = pdfData.text || '';
         fastify.log.info(`Extracted ${rawText.length} characters from PDF`);
       } catch (err) {
-        fastify.log.warn('Could not extract raw text for debugging:', err);
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        fastify.log.warn(`Could not extract raw text for debugging: ${errorMsg}`);
       }
 
       // Extract invoice data from PDF

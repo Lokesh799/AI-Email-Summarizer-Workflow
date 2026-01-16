@@ -763,7 +763,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                 </Box>
                 <Box
                   sx={{ width: 200 }}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
                   <KeywordsDisplay keywords={summary.keywords} maxVisible={2} />
                 </Box>
@@ -775,7 +775,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
                     gap: 0.5,
                     ml: 2,
                   }}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
                   <Tooltip title="View Details">
                     <IconButton

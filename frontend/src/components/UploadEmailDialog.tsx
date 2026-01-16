@@ -11,7 +11,6 @@ import {
   Alert,
   CircularProgress,
   IconButton,
-  Chip,
 } from '@mui/material';
 import { Close as CloseIcon, AttachFile as AttachFileIcon, CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 
@@ -82,7 +81,7 @@ export const UploadEmailDialog: React.FC<UploadEmailDialogProps> = ({ open, onCl
         throw new Error(errorData.error || 'Failed to process email');
       }
 
-      const result = await response.json();
+      await response.json();
       setSuccess(true);
       
       // Reset form after a short delay

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Chip, IconButton, Tooltip, Popover, Typography, Paper } from '@mui/material';
-import { ExpandMore, ExpandLess } from '@mui/icons-material';
+import { ExpandLess } from '@mui/icons-material';
 
 interface KeywordsDisplayProps {
   keywords: string[] | null;
@@ -20,7 +20,6 @@ export const KeywordsDisplay: React.FC<KeywordsDisplayProps> = ({ keywords, maxV
   }
 
   const visibleKeywords = expanded ? keywords : keywords.slice(0, maxVisible);
-  const remainingCount = keywords.length - maxVisible;
 
   const handleExpandClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (expanded) {
@@ -64,7 +63,7 @@ export const KeywordsDisplay: React.FC<KeywordsDisplayProps> = ({ keywords, maxV
               label={expanded ? 'See less' : 'See more'}
               size="small"
               variant="outlined"
-              onClick={handleExpandClick}
+              onClick={(e: React.MouseEvent<HTMLDivElement>) => handleExpandClick(e as unknown as React.MouseEvent<HTMLButtonElement>)}
               sx={{
                 fontSize: '0.75rem',
                 height: '28px',
