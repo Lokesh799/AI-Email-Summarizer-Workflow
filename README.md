@@ -1,6 +1,6 @@
 # AI Email Summarizer Workflow
 
-A full-stack workflow automation tool that automatically summarizes and categorizes emails using OpenAI APIs, stores results in a Neon PostgreSQL database, and provides a React dashboard for viewing and managing summaries.
+A full-stack workflow automation tool that automatically summarizes and categorizes emails using OpenAI APIs, stores results in a Neon PostgreSQL database, and provides a Gmail-like React dashboard for viewing and managing summaries.
 
 ## Features
 
@@ -8,10 +8,12 @@ A full-stack workflow automation tool that automatically summarizes and categori
 - 📊 **Automatic Categorization**: Classifies emails into categories (Meeting, Invoice, Support Request, etc.)
 - 🔑 **Keyword Extraction**: Extracts 5-10 key terms from each email
 - 💾 **Database Storage**: Stores all summaries in Neon PostgreSQL using Drizzle ORM
-- 🎨 **Modern Dashboard**: React + TypeScript + Material-UI interface
-- 🔍 **Filtering**: Filter summaries by category
+- 🎨 **Gmail-like Dashboard**: Modern React + TypeScript + Material-UI interface with tabbed navigation
+- 🔍 **Advanced Filtering**: Filter by tabs (All, Primary, Promotions, Social) with real-time search
+- 📎 **PDF Attachment Support**: Upload emails with PDF attachments for invoice/payslip extraction
+- 💰 **Invoice Data Extraction**: Automatically extracts itemized data from PDF invoices and payslips
 - 🔄 **Re-summarize**: Re-process any email to get updated summary
-- 🗑️ **Delete**: Remove summaries from the database
+- 🗑️ **Batch Delete**: Select and delete multiple emails at once
 - 📥 **CSV Export**: Export summaries as CSV files
 - 📧 **Mock Data**: Load sample emails for testing
 
@@ -24,6 +26,7 @@ A full-stack workflow automation tool that automatically summarizes and categori
 - **ORM**: Drizzle ORM
 - **AI**: OpenAI API (GPT-4o-mini)
 - **Validation**: Zod
+- **PDF Processing**: pdf-parse library
 
 ### Frontend
 - **Framework**: React 18 + TypeScript
@@ -148,11 +151,14 @@ npm run dev
 
 1. **Access the Dashboard**: Open `http://localhost:3000` in your browser
 2. **Load Mock Emails**: Click "Load Mock Emails" to process sample emails
-3. **View Summaries**: Browse all summaries in the table view
-4. **Filter by Category**: Use the dropdown to filter by category
-5. **Re-summarize**: Click the refresh icon to re-process an email
-6. **Delete**: Click the delete icon to remove a summary
-7. **Export CSV**: Click "Export CSV" to download all summaries
+3. **Upload Email with PDF**: Click "Upload Email" to add a new email, optionally with a PDF attachment
+4. **View Summaries**: Browse all summaries in the Gmail-like table view
+5. **Filter by Tabs**: Use tabs (All, Primary, Promotions, Social) to filter emails
+6. **Search**: Use the search bar to find emails by sender, subject, summary, category, or keywords
+7. **View Details**: Click the eye icon to view full email details and invoice data
+8. **Re-summarize**: Click the refresh icon to re-process an email
+9. **Batch Operations**: Select multiple emails using checkboxes and delete them in bulk
+10. **Export CSV**: Click "Export CSV" to download all summaries
 
 ## API Endpoints
 
@@ -160,11 +166,17 @@ npm run dev
 
 - `GET /api/summaries` - Get all summaries (optional `?category=Meeting` query param)
 - `GET /api/summaries/:id` - Get single summary by ID
-- `POST /api/summaries` - Create single summary
+- `POST /api/summaries` - Create single summary (supports multipart/form-data for PDF attachments)
 - `POST /api/summaries/batch` - Batch create summaries
 - `POST /api/summaries/:id/resummarize` - Re-summarize an email
 - `DELETE /api/summaries/:id` - Delete a summary
 - `GET /api/summaries/export` - Export summaries as CSV
+
+### PDF Processing
+
+- `POST /api/pdf/extract` - Extract invoice data from uploaded PDF
+- `GET /api/pdf/test` - Test PDF extraction with sample invoice
+- `POST /api/pdf/debug` - Debug endpoint to view raw extracted PDF text
 
 ### Mock Data
 
@@ -187,10 +199,12 @@ captivix-AI-Email-Summarizer/
 │   │   │   └── migrate.ts         # Migration script
 │   │   ├── routes/
 │   │   │   ├── emails.routes.ts   # Email summary routes
-│   │   │   └── mock.routes.ts     # Mock data routes
+│   │   │   ├── mock.routes.ts     # Mock data routes
+│   │   │   └── pdf.routes.ts      # PDF processing routes
 │   │   ├── services/
 │   │   │   ├── openai.service.ts  # OpenAI API integration
-│   │   │   └── email.service.ts   # Email business logic
+│   │   │   ├── email.service.ts   # Email business logic
+│   │   │   └── pdf.service.ts    # PDF extraction service
 │   │   ├── data/
 │   │   │   └── mock-emails.json   # Sample email data
 │   │   └── index.ts               # Fastify server entry
@@ -201,7 +215,9 @@ captivix-AI-Email-Summarizer/
 │   │   ├── components/
 │   │   │   ├── EmailDashboard.tsx # Main dashboard component
 │   │   │   ├── Header.tsx         # App header
-│   │   │   └── LoadingSpinner.tsx # Loading component
+│   │   │   ├── LoadingSpinner.tsx  # Loading component
+│   │   │   ├── KeywordsDisplay.tsx # Keywords display component
+│   │   │   └── UploadEmailDialog.tsx # Email upload dialog
 │   │   ├── services/
 │   │   │   └── email.service.ts   # API client
 │   │   ├── types/
@@ -221,6 +237,7 @@ captivix-AI-Email-Summarizer/
 3. **Zod Validation**: Runtime type validation for API requests
 4. **Service Layer Pattern**: Separates business logic from route handlers
 5. **Error Handling**: Comprehensive error handling with meaningful messages
+6. **PDF Processing**: Uses pdf-parse library for text extraction from PDF attachments
 
 ### Frontend Architecture
 
@@ -229,20 +246,23 @@ captivix-AI-Email-Summarizer/
 3. **Material-UI**: Consistent, accessible UI components
 4. **Service Layer**: Centralized API communication
 5. **Error Boundaries**: User-friendly error messages
+6. **Gmail-like UI**: Tabbed navigation with search and batch operations
 
 ### AI Integration
 
 1. **Structured Output**: Uses JSON mode for consistent responses
-2. **Prompt Engineering**: Carefully crafted prompts for accurate categorization
+2. **Prompt Engineering**: Carefully crafted prompts for accurate categorization and invoice extraction
 3. **Error Handling**: Graceful degradation when API calls fail
 4. **Rate Limiting**: Built-in delays for batch processing
+5. **PDF Analysis**: Specialized prompts for extracting financial data from payslips and invoices
 
 ### Database Design
 
 1. **UUID Primary Keys**: Better for distributed systems
 2. **Timestamps**: Automatic tracking of creation and updates
 3. **Array Support**: Keywords stored as PostgreSQL arrays
-4. **Indexing**: Optimized for category filtering
+4. **JSON Support**: Invoice data stored as JSONB for flexible structure
+5. **Indexing**: Optimized for category filtering
 
 ## Bonus Features Implemented
 
@@ -250,6 +270,10 @@ captivix-AI-Email-Summarizer/
 ✅ **CSV Export**: Download summaries as CSV files via `/api/summaries/export`  
 ✅ **Batch Processing**: Efficient handling of multiple emails  
 ✅ **Error Recovery**: Continues processing even if some emails fail  
+✅ **PDF Invoice Extraction**: Extracts itemized data from PDF invoices and payslips  
+✅ **Gmail-like Interface**: Tabbed navigation (All, Primary, Promotions, Social) with search  
+✅ **Batch Operations**: Select and delete multiple emails at once  
+✅ **Real-time Search**: Debounced search across sender, subject, summary, category, and keywords  
 
 ## Troubleshooting
 
@@ -265,6 +289,13 @@ captivix-AI-Email-Summarizer/
 - Check your OpenAI account has credits
 - Monitor rate limits (batch processing includes delays)
 
+### PDF Extraction Issues
+
+- Ensure PDF files are not image-based (text-based PDFs work best)
+- Check PDF file size (max 10MB)
+- Verify PDF contains extractable text (not scanned images)
+- Use the `/api/pdf/debug` endpoint to view extracted text
+
 ### Port Conflicts
 
 - Backend default: 3001 (change in `backend/.env`)
@@ -274,11 +305,12 @@ captivix-AI-Email-Summarizer/
 
 - [ ] Real-time email processing via webhooks
 - [ ] User authentication and multi-user support
-- [ ] Advanced filtering and search
-- [ ] Email attachment processing (PDF invoices)
+- [ ] OCR support for image-based PDFs
 - [ ] Scheduled re-summarization
 - [ ] Analytics dashboard
 - [ ] Email templates and notifications
+- [ ] Advanced filtering with date ranges
+- [ ] Email threading and conversation grouping
 
 ## License
 

@@ -14,13 +14,11 @@ try {
   // pdf-parse v2.x exports PDFParse as a class
   if (pdfParseModule.PDFParse) {
     PDFParseClass = pdfParseModule.PDFParse;
-    console.log('[PDF] ✅ Loaded pdf-parse v2.x (PDFParse class)');
   } else {
-    console.error('[PDF] Module keys:', Object.keys(pdfParseModule || {}));
     throw new Error('PDFParse class not found in pdf-parse module');
   }
 } catch (error) {
-  console.error('[PDF] ❌ Failed to load pdf-parse module:', error);
+  console.error('[PDF]  Failed to load pdf-parse module:', error);
   throw new Error(`Failed to load pdf-parse: ${error instanceof Error ? error.message : 'Unknown error'}`);
 }
 
@@ -90,49 +88,34 @@ export class PDFService {
       let contentToExtract = emailBody;
       let sourceType = 'email body';
 
-      console.log(`[PDF] Starting extraction. Email body length: ${emailBody.length}, Has PDF: ${!!pdfBuffer}`);
-
       // If PDF buffer is provided, extract text from PDF
       if (pdfBuffer) {
         try {
-          console.log(`[PDF] PDF buffer size: ${pdfBuffer.length} bytes`);
           const extractedText = await this.extractTextFromPDF(pdfBuffer);
           contentToExtract = extractedText;
           sourceType = 'PDF attachment';
-          console.log(`[PDF] ✅ Extracted ${extractedText.length} characters from PDF`);
-          console.log(`[PDF] First 500 chars: ${extractedText.substring(0, 500)}`);
         } catch (error) {
           // Fall back to email body if PDF extraction fails
-          console.error('[PDF] ❌ Failed to extract text from PDF:', error);
-          console.warn('[PDF] Falling back to email body for extraction');
+          console.error('[PDF] Failed to extract text from PDF:', error);
           // Continue with email body
         }
       }
-
-      console.log(`[PDF] Content to extract length: ${contentToExtract.length} characters`);
-      console.log(`[PDF] Source type: ${sourceType}`);
 
       // If PDF was provided and we successfully extracted text, ALWAYS proceed with extraction
       // Don't check keywords - the PDF content is what matters
       if (pdfBuffer && sourceType === 'PDF attachment') {
         if (contentToExtract.length < 50) {
-          console.error('[PDF] ❌ PDF text extraction returned very little content (< 50 chars). PDF might be image-based, corrupted, or empty.');
-          console.error(`[PDF] Extracted text: "${contentToExtract}"`);
+          console.error('[PDF] PDF text extraction returned very little content. PDF might be image-based, corrupted, or empty.');
           return null;
         }
-        console.log('[PDF] ✅ PDF provided with extracted text - proceeding with extraction');
-        console.log(`[PDF] Content preview (first 1000 chars):\n${contentToExtract.substring(0, 1000)}`);
         // Proceed directly to extraction - don't check keywords for PDFs
       } else {
         // For email body only (no PDF), check for financial keywords
         const hasFinancialContent = FINANCIAL_DOCUMENT_KEYWORDS.some((keyword) =>
           contentToExtract.toLowerCase().includes(keyword.toLowerCase())
         );
-
-        console.log(`[PDF] Has financial content in email body: ${hasFinancialContent}`);
         
         if (!hasFinancialContent) {
-          console.warn(`[PDF] ❌ No financial keywords found in email body. Content preview: ${contentToExtract.substring(0, 200)}`);
           return null;
         }
       }
@@ -237,9 +220,6 @@ Return valid JSON only, no markdown, no explanations.`;
         return null;
       }
 
-      console.log(`[PDF] OpenAI response length: ${content.length} characters`);
-      console.log(`[PDF] OpenAI response preview: ${content.substring(0, 200)}`);
-
       let parsed: unknown;
       try {
         parsed = JSON.parse(content);
@@ -312,11 +292,9 @@ Return valid JSON only, no markdown, no explanations.`;
             .reduce((sum, item) => sum + (item.total || 0), 0);
           
           finalTotal = earnings - deductions;
-          console.log(`[PDF] Payslip calculation: Earnings=${earnings}, Deductions=${deductions}, Net Payable=${finalTotal}`);
         } else {
           // For invoices/bills: sum all item totals
           finalTotal = cleanedItems.reduce((sum, item) => sum + (item.total || 0), 0);
-          console.log(`[PDF] Invoice calculation: Sum of all items=${finalTotal}`);
         }
       } else if (finalTotal > 0) {
         // Validate the provided total makes sense
@@ -337,14 +315,12 @@ Return valid JSON only, no markdown, no explanations.`;
           
           // If provided total is way off, recalculate
           if (Math.abs(finalTotal - expectedTotal) > 100) {
-            console.warn(`[PDF] ⚠️ Provided total (${finalTotal}) doesn't match expected (${expectedTotal}), recalculating...`);
             finalTotal = expectedTotal;
           }
         } else {
           // For invoices, check if total matches sum of items (within 1% tolerance)
           const tolerance = sumOfItems * 0.01;
           if (Math.abs(finalTotal - sumOfItems) > tolerance && sumOfItems > 0) {
-            console.warn(`[PDF] ⚠️ Provided total (${finalTotal}) doesn't match sum of items (${sumOfItems}), using sum...`);
             finalTotal = sumOfItems;
           }
         }
@@ -369,29 +345,14 @@ Return valid JSON only, no markdown, no explanations.`;
         currency: currency,
       };
 
-      console.log(`[PDF] ✅ Extraction complete: ${cleanedItems.length} items, total: ${finalTotal} ${currency}`);
-      if (cleanedItems.length > 0) {
-        console.log(`[PDF] Sample items:`, cleanedItems.slice(0, 3).map(i => `${i.item}: ${i.total}`));
-      } else {
-        console.warn(`[PDF] ⚠️ No items extracted! Check if PDF contains financial data.`);
-        console.log(`[PDF] Content preview that was sent to OpenAI: ${contentToExtract.substring(0, 1000)}`);
-      }
-
-      // If no items extracted but we had a PDF, return null to indicate failure
+      // If no items extracted but we had a PDF, log error
       if (cleanedItems.length === 0 && pdfBuffer) {
-        console.error('[PDF] ❌ PDF provided but no items extracted. This might indicate:');
-        console.error('[PDF] 1. PDF text extraction failed');
-        console.error('[PDF] 2. PDF is image-based (needs OCR)');
-        console.error('[PDF] 3. PDF doesn\'t contain extractable financial data');
-        console.error('[PDF] 4. OpenAI couldn\'t parse the content');
+        console.error('[PDF] PDF provided but no items extracted. PDF might be image-based or contain no extractable financial data.');
       }
 
       return result;
     } catch (error) {
       console.error('[PDF] Error extracting invoice data:', error);
-      if (error instanceof Error) {
-        console.error('[PDF] Error stack:', error.stack);
-      }
       return null;
     }
   }
@@ -401,17 +362,11 @@ Return valid JSON only, no markdown, no explanations.`;
    */
   private async extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
     try {
-      console.log(`[PDF] Attempting to extract text from PDF buffer (${pdfBuffer.length} bytes)`);
-      
       // pdf-parse v2.x API: Use PDFParse class
-      console.log('[PDF] Creating PDFParse instance...');
       const parser = new PDFParseClass({ data: pdfBuffer });
-      
-      console.log('[PDF] Calling getText() method...');
       const extractedText = await parser.getText();
       
       if (!extractedText || (typeof extractedText === 'string' && extractedText.trim().length === 0)) {
-        console.warn('[PDF] ⚠️ Extracted text is empty');
         throw new Error('PDF text extraction returned empty result. PDF might be image-based or corrupted.');
       }
 
@@ -420,18 +375,10 @@ Return valid JSON only, no markdown, no explanations.`;
       if (!text || text.trim().length === 0) {
         throw new Error('PDF text extraction returned empty result');
       }
-
-      console.log(`[PDF] ✅ Successfully extracted ${text.length} characters from PDF`);
-      console.log(`[PDF] Text preview (first 1000 chars):\n${text.substring(0, 1000)}`);
       
       return text;
     } catch (error) {
-      console.error('[PDF] ❌ Error extracting text from PDF:', error);
-      if (error instanceof Error) {
-        console.error('[PDF] Error name:', error.name);
-        console.error('[PDF] Error message:', error.message);
-        console.error('[PDF] Error stack:', error.stack);
-      }
+      console.error('[PDF] Error extracting text from PDF:', error);
       throw new Error(
         `Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

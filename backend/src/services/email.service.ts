@@ -15,12 +15,8 @@ export class EmailService {
     // This ensures we capture invoices, payslips, bills, and other financial documents
     let invoiceData = null;
     
-    console.log(`💰 [EmailService] Checking for financial data extraction. Category: ${summaryData.category}, Has PDF: ${!!email.pdfAttachment}`);
-    
     if (summaryData.category === 'Invoice') {
-      console.log(`💰 [EmailService] Category is Invoice, extracting financial data...`);
       invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
-      console.log(`💰 [EmailService] Invoice extraction result: ${invoiceData ? `${invoiceData.items?.length || 0} items, total: ${invoiceData.total}` : 'null'}`);
     } else {
       // Check for financial document keywords in subject or body
       const financialKeywords = [
@@ -34,15 +30,9 @@ export class EmailService {
           email.body.toLowerCase().includes(keyword)
       );
       
-      console.log(`💰 [EmailService] Has financial keywords: ${hasFinancialKeywords}, Has PDF: ${!!email.pdfAttachment}`);
-      
       // If PDF attachment exists or financial keywords found, extract financial data
       if (hasFinancialKeywords || email.pdfAttachment) {
-        console.log(`💰 [EmailService] Extracting financial data (keywords or PDF detected)...`);
         invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
-        console.log(`💰 [EmailService] Financial extraction result: ${invoiceData ? `${invoiceData.items?.length || 0} items, total: ${invoiceData.total}` : 'null'}`);
-      } else {
-        console.log(`💰 [EmailService] No financial keywords or PDF, skipping extraction`);
       }
     }
 
