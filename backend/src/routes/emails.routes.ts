@@ -26,6 +26,9 @@ export async function emailRoutes(fastify: FastifyInstance) {
         const endIndex = startIndex + pageSize;
         const paginatedSummaries = summaries.slice(startIndex, endIndex);
 
+        // Add cache headers for better performance
+        reply.header('Cache-Control', 'private, max-age=60');
+        
         return reply.send({
           data: paginatedSummaries,
           count: paginatedSummaries.length,

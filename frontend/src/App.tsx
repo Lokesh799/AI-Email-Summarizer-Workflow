@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Typography, Box, Alert, Snackbar, ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { Container, Box, Alert, Snackbar, ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { EmailSummary } from './types';
 import { emailService } from './services/email.service';
 import { EmailDashboard } from './components/EmailDashboard';
@@ -45,6 +45,17 @@ const theme = createTheme({
     },
     body2: {
       lineHeight: 1.5,
+    },
+  },
+  transitions: {
+    duration: {
+      shortest: 150,
+      shorter: 200,
+      short: 250,
+      standard: 300,
+      complex: 375,
+      enteringScreen: 225,
+      leavingScreen: 195,
     },
   },
   shape: {
@@ -188,20 +199,7 @@ function App() {
             flexDirection: 'column',
           }}
         >
-          <Container maxWidth="xl" sx={{ py: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Typography
-              variant="h4"
-              component="h1"
-              gutterBottom
-              sx={{
-                mb: 2,
-                fontWeight: 600,
-                color: 'text.primary',
-              }}
-            >
-              AI Email Summarizer Dashboard
-            </Typography>
-
+          <Container maxWidth="xl" sx={{ py: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             {error && (
               <Alert
                 severity="error"
@@ -215,15 +213,13 @@ function App() {
             {loading && summaries.length === 0 ? (
               <LoadingSpinner />
             ) : (
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                <EmailDashboard
-                  summaries={summaries}
-                  onFilter={loadSummaries}
-                  onReSummarize={handleReSummarize}
-                  onDelete={handleDelete}
-                  loading={loading}
-                />
-              </Box>
+              <EmailDashboard
+                summaries={summaries}
+                onFilter={loadSummaries}
+                onReSummarize={handleReSummarize}
+                onDelete={handleDelete}
+                loading={loading}
+              />
             )}
           </Container>
         </Box>
