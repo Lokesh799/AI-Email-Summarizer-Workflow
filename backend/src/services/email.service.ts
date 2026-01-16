@@ -11,10 +11,39 @@ export class EmailService {
   async createSummary(email: EmailData): Promise<EmailSummary> {
     const summaryData = await openAIService.summarizeEmail(email);
 
-    // Extract invoice data if category is Invoice
+    // Extract financial data if category is Invoice OR if email contains financial keywords OR has PDF attachment
+    // This ensures we capture invoices, payslips, bills, and other financial documents
     let invoiceData = null;
+    
+    console.log(`💰 [EmailService] Checking for financial data extraction. Category: ${summaryData.category}, Has PDF: ${!!email.pdfAttachment}`);
+    
     if (summaryData.category === 'Invoice') {
-      invoiceData = await pdfService.extractInvoiceData(email.body);
+      console.log(`💰 [EmailService] Category is Invoice, extracting financial data...`);
+      invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
+      console.log(`💰 [EmailService] Invoice extraction result: ${invoiceData ? `${invoiceData.items?.length || 0} items, total: ${invoiceData.total}` : 'null'}`);
+    } else {
+      // Check for financial document keywords in subject or body
+      const financialKeywords = [
+        'invoice', 'bill', 'payment due', 'amount due', '$', 'total:', 'item:', 'quantity',
+        'payslip', 'salary', 'earnings', 'deductions', 'basic', 'hra', 'allowance', 
+        'tax', 'net payable', 'gross', 'RS.', 'INR', 'receipt'
+      ];
+      const hasFinancialKeywords = financialKeywords.some(
+        (keyword) =>
+          email.subject.toLowerCase().includes(keyword) ||
+          email.body.toLowerCase().includes(keyword)
+      );
+      
+      console.log(`💰 [EmailService] Has financial keywords: ${hasFinancialKeywords}, Has PDF: ${!!email.pdfAttachment}`);
+      
+      // If PDF attachment exists or financial keywords found, extract financial data
+      if (hasFinancialKeywords || email.pdfAttachment) {
+        console.log(`💰 [EmailService] Extracting financial data (keywords or PDF detected)...`);
+        invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
+        console.log(`💰 [EmailService] Financial extraction result: ${invoiceData ? `${invoiceData.items?.length || 0} items, total: ${invoiceData.total}` : 'null'}`);
+      } else {
+        console.log(`💰 [EmailService] No financial keywords or PDF, skipping extraction`);
+      }
     }
 
     const newSummary: NewEmailSummary = {
@@ -52,10 +81,27 @@ export class EmailService {
         continue;
       }
 
-      // Extract invoice data if category is Invoice
+      // Extract financial data if category is Invoice OR if email contains financial keywords OR has PDF attachment
       let invoiceData = null;
       if (summaryData.category === 'Invoice') {
-        invoiceData = await pdfService.extractInvoiceData(email.body);
+        invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
+      } else {
+        // Check for financial document keywords
+        const financialKeywords = [
+          'invoice', 'bill', 'payment due', 'amount due', '$', 'total:', 'item:', 'quantity',
+          'payslip', 'salary', 'earnings', 'deductions', 'basic', 'hra', 'allowance', 
+          'tax', 'net payable', 'gross', 'RS.', 'INR', 'receipt'
+        ];
+        const hasFinancialKeywords = financialKeywords.some(
+          (keyword) =>
+            email.subject.toLowerCase().includes(keyword) ||
+            email.body.toLowerCase().includes(keyword)
+        );
+        
+        // If PDF attachment exists or financial keywords found, extract financial data
+        if (hasFinancialKeywords || email.pdfAttachment) {
+          invoiceData = await pdfService.extractInvoiceData(email.body, email.pdfAttachment);
+        }
       }
 
       summariesToInsert.push({

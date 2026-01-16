@@ -22,9 +22,32 @@ export const emailService = {
     return response.data.data;
   },
 
-  async createSummary(email: EmailData): Promise<EmailSummary> {
-    const response = await api.post<{ data: EmailSummary }>('/summaries', email);
-    return response.data.data;
+  async createSummary(email: EmailData, pdfFile?: File): Promise<EmailSummary> {
+    if (pdfFile) {
+      // Use FormData for multipart upload with PDF
+      const formData = new FormData();
+      formData.append('sender', email.sender);
+      formData.append('subject', email.subject);
+      formData.append('body', email.body);
+      formData.append('pdf', pdfFile);
+
+      const response = await fetch(`${API_BASE_URL}/summaries`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create summary');
+      }
+
+      const result = await response.json();
+      return result.data;
+    } else {
+      // Use JSON for regular email without PDF
+      const response = await api.post<{ data: EmailSummary }>('/summaries', email);
+      return response.data.data;
+    }
   },
 
   async batchCreateSummaries(emails: EmailData[]): Promise<EmailSummary[]> {

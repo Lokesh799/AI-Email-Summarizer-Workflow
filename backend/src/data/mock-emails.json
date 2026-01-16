@@ -7,7 +7,7 @@
   {
     "sender": "billing@invoiceservice.com",
     "subject": "Invoice #INV-2024-001 - Payment Due",
-    "body": "Dear Customer, This is a reminder that your invoice #INV-2024-001 for the amount of $2,450.00 is due on January 15, 2024. The invoice includes services rendered for the month of December 2023. Please make payment via bank transfer or credit card. If you have any questions, please contact our billing department."
+    "body": "Dear Customer, This is a reminder that your invoice #INV-2024-001 for the amount of $2,450.00 is due on January 15, 2024. The invoice includes services rendered for the month of December 2023. Please make payment via bank transfer or credit card. If you have any questions, please contact our billing department.\n\nINVOICE DETAILS:\nItem: Web Development Services - Quantity: 1 - Price: $1,500.00 - Total: $1,500.00\nItem: Consulting Hours - Quantity: 10 hours - Price: $80.00 per hour - Total: $800.00\nItem: Hosting Services - Quantity: 1 month - Price: $150.00 - Total: $150.00\n\nSUBTOTAL: $2,450.00\nTAX (8%): $196.00\nTOTAL DUE: $2,646.00\nCurrency: USD"
   },
   {
     "sender": "support@techhelp.com",
@@ -32,7 +32,7 @@
   {
     "sender": "billing@utilities.com",
     "subject": "Monthly Invoice - December 2023",
-    "body": "Your monthly invoice for December 2023 is now available. Total amount due: $125.50. This includes electricity, water, and internet services. Payment is due by January 20, 2024. You can pay online through our portal or set up automatic payments. Thank you for being a valued customer."
+    "body": "Your monthly invoice for December 2023 is now available. Payment is due by January 20, 2024. You can pay online through our portal or set up automatic payments.\n\nINVOICE BREAKDOWN:\nItem: Electricity Service - Quantity: 1 month - Price: $65.00 - Total: $65.00\nItem: Water Service - Quantity: 1 month - Price: $35.50 - Total: $35.50\nItem: Internet Service - Quantity: 1 month - Price: $25.00 - Total: $25.00\n\nSUBTOTAL: $125.50\nTOTAL DUE: $125.50\nCurrency: USD\n\nThank you for being a valued customer."
   },
   {
     "sender": "support@software.com",

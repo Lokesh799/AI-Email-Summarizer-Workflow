@@ -37,7 +37,6 @@ import {
   Visibility as VisibilityIcon,
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
-  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { EmailSummary } from '../types';
 import { KeywordsDisplay } from './KeywordsDisplay';
@@ -55,7 +54,7 @@ interface ProcessingState {
 }
 
 // Gmail-like tab categories
-type GmailTab = 'Primary' | 'Promotions' | 'Social' | 'Updates';
+type GmailTab = 'Primary' | 'Promotions' | 'Social' | 'All';
 
 // Map our categories to Gmail tabs
 const mapCategoryToGmailTab = (category: string): GmailTab => {
@@ -67,7 +66,6 @@ const mapCategoryToGmailTab = (category: string): GmailTab => {
       return 'Social';
     case 'Invoice':
     case 'Support Request':
-      return 'Updates';
     case 'Meeting':
     case 'Work':
     case 'Other':
@@ -117,7 +115,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   loading,
 }) => {
   const theme = useTheme();
-  const [selectedTab, setSelectedTab] = useState<GmailTab>('Primary');
+  const [selectedTab, setSelectedTab] = useState<GmailTab>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -144,7 +142,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
       Primary: 0,
       Promotions: 0,
       Social: 0,
-      Updates: 0,
+      All: summaries.length,
     };
 
     summaries.forEach((summary) => {
@@ -157,6 +155,9 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
 
   // Filter summaries by selected tab
   const tabFilteredSummaries = useMemo(() => {
+    if (selectedTab === 'All') {
+      return summaries;
+    }
     return summaries.filter((summary) => {
       const tab = mapCategoryToGmailTab(summary.category);
       return tab === selectedTab;
@@ -306,16 +307,6 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
   const allSelected = paginatedSummaries.length > 0 && selectedIds.size === paginatedSummaries.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < paginatedSummaries.length;
 
-  // Statistics
-  const stats = useMemo(() => {
-    const total = summaries.length;
-    const byCategory = summaries.reduce((acc, s) => {
-      acc[s.category] = (acc[s.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    return { total, byCategory };
-  }, [summaries]);
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* Statistics Bar */}
@@ -406,6 +397,33 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                All
+                {tabCounts.All > 0 && (
+                  <Tooltip title={`${tabCounts.All} total emails`}>
+                    <Chip
+                      label={tabCounts.All}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        minWidth: 20,
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        backgroundColor: '#6c757d',
+                        color: '#ffffff',
+                        '& .MuiChip-label': {
+                          px: 0.75,
+                        },
+                      }}
+                    />
+                  </Tooltip>
+                )}
+              </Box>
+            }
+            value="All"
+          />
+          <Tab
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 Primary
                 {tabCounts.Primary > 0 && (
                   <Tooltip title={`${tabCounts.Primary} emails in Primary`}>
@@ -484,33 +502,6 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
             }
             value="Social"
           />
-          <Tab
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                Updates
-                {tabCounts.Updates > 0 && (
-                  <Tooltip title={`${tabCounts.Updates} emails in Updates`}>
-                    <Chip
-                      label={tabCounts.Updates}
-                      size="small"
-                      sx={{
-                        height: 20,
-                        minWidth: 20,
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        backgroundColor: '#fbbc04',
-                        color: '#ffffff',
-                        '& .MuiChip-label': {
-                          px: 0.75,
-                        },
-                      }}
-                    />
-                  </Tooltip>
-                )}
-              </Box>
-            }
-            value="Updates"
-          />
         </Tabs>
       </Box>
 
@@ -576,7 +567,7 @@ export const EmailDashboard: React.FC<EmailDashboardProps> = ({
             No emails found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {searchQuery || selectedTab !== 'Primary'
+            {searchQuery || selectedTab !== 'All'
               ? 'Try adjusting your search or filters'
               : 'Click "Load Mock Emails" to get started'}
           </Typography>

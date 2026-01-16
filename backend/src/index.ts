@@ -1,8 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import dotenv from 'dotenv';
 import { emailRoutes } from './routes/emails.routes.js';
 import { mockRoutes } from './routes/mock.routes.js';
+import { pdfRoutes } from './routes/pdf.routes.js';
 
 dotenv.config();
 
@@ -20,6 +22,13 @@ fastify.register(cors, {
   credentials: true,
 });
 
+// Register multipart for file uploads (PDF attachments)
+fastify.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for PDF files
+  },
+});
+
 // Health check
 fastify.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
@@ -28,6 +37,7 @@ fastify.get('/health', async () => {
 // Register routes with /api prefix
 fastify.register(emailRoutes, { prefix: '/api' });
 fastify.register(mockRoutes, { prefix: '/api' });
+fastify.register(pdfRoutes, { prefix: '/api' });
 
 const start = async () => {
   try {

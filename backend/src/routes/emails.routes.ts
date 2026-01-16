@@ -63,12 +63,67 @@ export async function emailRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Create single summary
-  fastify.post<{ Body: z.infer<typeof EmailSchema> }>('/summaries', async (request, reply) => {
+  // Create single summary (supports PDF attachment via multipart/form-data)
+  fastify.post('/summaries', async (request, reply) => {
     try {
-      const validated = EmailSchema.parse(request.body);
-      const summary = await emailService.createSummary(validated);
-      return reply.status(201).send({ data: summary });
+      // Check if request is multipart (has files)
+      const contentType = request.headers['content-type'] || '';
+      const isMultipart = contentType.includes('multipart/form-data');
+
+      if (!isMultipart) {
+        // Handle JSON body (no file upload)
+        const body = request.body as { sender?: string; subject?: string; body?: string };
+        const validated = EmailSchema.parse(body);
+        const summary = await emailService.createSummary(validated);
+        return reply.status(201).send({ data: summary });
+      }
+
+      // Handle multipart/form-data with PDF attachment
+      const fields: Record<string, string> = {};
+      let pdfBuffer: Buffer | undefined;
+
+      // Parse all parts (fields and files)
+      const parts = request.parts();
+      for await (const part of parts) {
+        if (part.type === 'file') {
+          if (part.filename && part.filename.toLowerCase().endsWith('.pdf')) {
+            const chunks: Buffer[] = [];
+            for await (const chunk of part.file) {
+              chunks.push(chunk);
+            }
+            pdfBuffer = Buffer.concat(chunks);
+            fastify.log.info(`📎 [API] Received PDF attachment: ${part.filename}, size: ${pdfBuffer.length} bytes`);
+          } else {
+            fastify.log.warn(`⚠️ [API] File uploaded but not PDF: ${part.filename}`);
+          }
+        } else {
+          fields[part.fieldname] = part.value as string;
+        }
+      }
+
+      fastify.log.info(`📧 [API] Email data: sender=${fields.sender}, subject=${fields.subject}, hasPDF=${!!pdfBuffer}`);
+
+      // Validate required fields
+      if (!fields.sender || !fields.subject || !fields.body) {
+        return reply.status(400).send({ 
+          error: 'Missing required fields', 
+          required: ['sender', 'subject', 'body'] 
+        });
+      }
+
+      const emailData = {
+        sender: fields.sender,
+        subject: fields.subject,
+        body: fields.body,
+        pdfAttachment: pdfBuffer,
+      };
+
+      const summary = await emailService.createSummary(emailData);
+      
+      return reply.status(201).send({ 
+        data: summary,
+        message: pdfBuffer ? 'Email processed with PDF attachment' : 'Email processed successfully'
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: 'Invalid email data', details: error.errors });

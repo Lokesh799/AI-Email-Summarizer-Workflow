@@ -36,6 +36,7 @@ export interface EmailData {
   sender: string;
   subject: string;
   body: string;
+  pdfAttachment?: Buffer; // Optional PDF attachment buffer
 }
 
 const MAX_BODY_LENGTH = 3000;

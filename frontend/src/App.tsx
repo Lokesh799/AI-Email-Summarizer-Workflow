@@ -5,6 +5,7 @@ import { emailService } from './services/email.service';
 import { EmailDashboard } from './components/EmailDashboard';
 import { Header } from './components/Header';
 import { LoadingSpinner } from './components/LoadingSpinner';
+import { UploadEmailDialog } from './components/UploadEmailDialog';
 
 // Create a custom theme with improved typography and colors
 const theme = createTheme({
@@ -95,6 +96,7 @@ function App() {
     message: '',
     severity: 'success',
   });
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const loadSummaries = async (category?: string) => {
     try {
@@ -170,6 +172,11 @@ function App() {
     }
   };
 
+  const handleUploadSuccess = async () => {
+    showSnackbar('Email uploaded and processed successfully!', 'success');
+    await loadSummaries(currentCategory);
+  };
+
   useEffect(() => {
     loadSummaries();
   }, []);
@@ -189,6 +196,7 @@ function App() {
         <Header
           onLoadMockEmails={handleLoadMockEmails}
           onExport={handleExport}
+          onUploadEmail={() => setUploadDialogOpen(true)}
           loading={loading}
         />
         <Box
@@ -238,6 +246,12 @@ function App() {
             {snackbar.message}
           </Alert>
         </Snackbar>
+
+        <UploadEmailDialog
+          open={uploadDialogOpen}
+          onClose={() => setUploadDialogOpen(false)}
+          onSuccess={handleUploadSuccess}
+        />
       </Box>
     </ThemeProvider>
   );
