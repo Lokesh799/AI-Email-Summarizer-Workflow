@@ -22,7 +22,10 @@ const fastify = Fastify({
 });
 
 // Register CORS
-const corsOrigin = process.env.CORS_ORIGIN || true;
+// In Replit, allow all origins; otherwise use configured origin
+const corsOrigin = process.env.REPLIT 
+  ? true // Allow all origins in Replit
+  : (process.env.CORS_ORIGIN || true);
 fastify.register(cors, {
   origin: corsOrigin,
   credentials: true,

@@ -1,0 +1,38 @@
+INVOICE
+Invoice Number: INV-2024-001
+Date: January 15, 2024
+Due Date: February 15, 2024
+
+BILL TO:
+Customer Name
+123 Business Street
+City, State 12345
+
+ITEMIZED CHARGES:
+
+Item: Web Development Services
+Description: Custom website development and implementation
+Quantity: 1
+Unit Price: $1,500.00
+Total: $1,500.00
+
+Item: Consulting Hours
+Description: Technical consulting and support
+Quantity: 10 hours
+Unit Price: $80.00
+Total: $800.00
+
+Item: Hosting Services
+Description: Monthly hosting and maintenance
+Quantity: 1 month
+Unit Price: $150.00
+Total: $150.00
+
+SUBTOTAL: $2,450.00
+TAX (8%): $196.00
+TOTAL DUE: $2,646.00
+
+Currency: USD
+
+Payment Terms: Net 30
+Thank you for your business!
