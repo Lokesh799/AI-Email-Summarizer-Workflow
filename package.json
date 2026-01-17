@@ -14,7 +14,7 @@
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "start:replit": "npm run build:frontend && cd backend && npm run start:replit",
+    "start:railway": "npm run build:frontend && cd backend && npm run build && cd .. && cd backend && node dist/index.js",
     "postinstall": "cd backend && npm install && cd ../frontend && npm install"
   },
   "devDependencies": {

@@ -22,9 +22,9 @@ const fastify = Fastify({
 });
 
 // Register CORS
-// In Replit, allow all origins; otherwise use configured origin
-const corsOrigin = process.env.REPLIT 
-  ? true // Allow all origins in Replit
+// In Railway or production, allow all origins; otherwise use configured origin
+const corsOrigin = process.env.RAILWAY_ENVIRONMENT
+  ? true // Allow all origins in Railway
   : (process.env.CORS_ORIGIN || true);
 fastify.register(cors, {
   origin: corsOrigin,
@@ -38,9 +38,9 @@ fastify.register(multipart, {
   },
 });
 
-// Serve frontend static files in production/Replit (before API routes)
+// Serve frontend static files in production/Railway (before API routes)
 async function setupStaticFiles() {
-  if (process.env.NODE_ENV === 'production' || process.env.REPLIT) {
+  if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
     try {
       // @ts-ignore - @fastify/static types will be available after npm install
       const fastifyStatic = await import('@fastify/static');

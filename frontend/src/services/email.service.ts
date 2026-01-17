@@ -1,13 +1,10 @@
 import axios from 'axios';
 import { EmailSummary, EmailData } from '../types';
 
-// Detect if running in Replit or production
-const isReplit = window.location.hostname.includes('replit.dev') || 
-                 window.location.hostname.includes('replit.com') ||
-                 import.meta.env.VITE_REPLIT === 'true';
-const isProduction = import.meta.env.PROD || isReplit;
+// Detect if running in production
+const isProduction = import.meta.env.PROD;
 
-// In Replit/production, use relative URL since frontend is served from same origin
+// In production, use relative URL since frontend is served from same origin
 // In development, use localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (isProduction ? '/api' : 'http://localhost:3001/api');
