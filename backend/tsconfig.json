@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-   "module": "CommonJS",
+    "module": "nodenext",           // ESM for import.meta
+    "moduleResolution": "NodeNext", // Required for NodeNext module
     "lib": ["ES2022"],
-    "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
