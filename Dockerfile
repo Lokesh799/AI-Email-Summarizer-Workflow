@@ -1,26 +1,29 @@
-# Use Node 20
-FROM node:20-alpine
+# Use Node 20 (required by pdf-parse)
+FROM node:20.16-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy only package files first (better caching)
 COPY package*.json ./
-COPY backend/package*.json ./backend/
-COPY frontend/package*.json ./frontend/
+COPY backend/package*.json backend/
+COPY frontend/package*.json frontend/
 
-# Install dependencies (workspaces handle backend and frontend automatically)
+# Install all workspace deps
 RUN npm install --legacy-peer-deps
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Build frontend and backend
-RUN cd frontend && npm run build && cd ..
-RUN cd backend && npm run build && cd ..
+# Build frontend
+WORKDIR /app/frontend
+RUN npm run build
 
-# Expose port
+# Build backend
+WORKDIR /app/backend
+RUN npm run build
+
+# Expose backend port
 EXPOSE 3001
 
-# Start backend (which serves frontend)
-WORKDIR /app/backend
+# Start backend
 CMD ["node", "dist/index.js"]
