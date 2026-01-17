@@ -7,20 +7,18 @@
     "node": ">=20.16.0",
     "npm": ">=10.0.0"
   },
+   "overrides": {
+    "ajv": "6.12.6"
+  },
   "workspaces": [
     "backend",
     "frontend"
   ],
-  "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "start:railway": "npm run build:frontend && cd backend && npm run build && cd .. && cd backend && node dist/index.js",
-    "postinstall": "cd backend && npm run postinstall"
-  },
+ "scripts": {
+  "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+  "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+  "start:railway": "node backend/dist/index.js"
+},
   "devDependencies": {
     "concurrently": "^8.2.2"
   }
