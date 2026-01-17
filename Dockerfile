@@ -2,15 +2,20 @@ FROM node:20.16-alpine
 
 WORKDIR /app
 
-# Copy workspace manifests
+# Copy root manifests
 COPY package*.json ./
+
+# Copy workspace manifests
 COPY backend/package*.json backend/
 COPY frontend/package*.json frontend/
 
-# Install once (workspace-aware)
+# 🔑 Copy backend scripts needed for postinstall
+COPY backend/scripts backend/scripts
+
+# Install dependencies (postinstall will now succeed)
 RUN npm install --legacy-peer-deps
 
-# Copy source
+# Copy remaining source code
 COPY . .
 
 # Build frontend
