@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "AI-powered email summarization workflow automation",
   "private": true,
+  "engines": {
+    "node": ">=20.16.0",
+    "npm": ">=10.0.0"
+  },
   "workspaces": [
     "backend",
     "frontend"
@@ -15,7 +19,7 @@
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "start:railway": "npm run build:frontend && cd backend && npm run build && cd .. && cd backend && node dist/index.js",
-    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
+    "postinstall": "cd backend && npm run postinstall"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

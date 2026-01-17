@@ -78,12 +78,15 @@ module.exports.validate = () => true;
   },
 ];
 
-function createShims(baseDir) {
+function createShims(baseDir, locationName = '') {
   const nodeModulesPath = path.join(baseDir, 'node_modules');
   
   // Only create if node_modules exists
   if (!fs.existsSync(nodeModulesPath)) {
-    console.log(`⚠️  Skipping ${baseDir} - node_modules not found`);
+    // With npm workspaces, dependencies are hoisted to root, so this is expected
+    if (locationName) {
+      console.log(`ℹ️  ${locationName} - using root node_modules (workspaces)`);
+    }
     return;
   }
   
@@ -107,6 +110,6 @@ const backendDir = path.join(__dirname, '..');
 const rootDir = path.join(backendDir, '..');
 
 console.log('Creating ajv shim files...');
-createShims(backendDir);
-createShims(rootDir);
+createShims(backendDir, 'Backend');
+createShims(rootDir, 'Root');
 console.log('✅ All shim files created!');
