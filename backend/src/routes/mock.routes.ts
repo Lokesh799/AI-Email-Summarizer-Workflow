@@ -5,8 +5,13 @@ import { dirname, join } from 'path';
 import { emailService } from '../services/email.service.js';
 import { pdfService } from '../services/pdf.service.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+
+import path from "path";
+
+const __dirname = path.resolve();
+
 
 /**
  * Mock routes for loading sample email data

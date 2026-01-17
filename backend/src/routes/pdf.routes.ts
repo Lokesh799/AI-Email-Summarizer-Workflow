@@ -4,8 +4,13 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { pdfService } from '../services/pdf.service.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+
+import path from "path";
+
+const __dirname = path.resolve();
+
 
 /**
  * Routes for PDF invoice extraction testing

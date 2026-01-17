@@ -9,10 +9,15 @@ import { emailRoutes } from './routes/emails.routes.js';
 import { mockRoutes } from './routes/mock.routes.js';
 import { pdfRoutes } from './routes/pdf.routes.js';
 
+
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+import path from "path";
+
+const __dirname = path.resolve();
+
 
 // Configure Fastify
 // Note: We use Zod for validation in routes, not Fastify's built-in schema validation
